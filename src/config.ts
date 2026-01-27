@@ -48,13 +48,73 @@ export interface CommandsConfig {
 }
 
 /**
+ * Pattern that can be either a glob string or a regex pattern string
+ * Regex patterns should be prefixed with "regex:" (e.g., "regex:^src/app/.*\\.(ts|tsx)$")
+ */
+export type CoveragePattern = string
+
+/**
  * Coverage scope configuration - patterns for files that require coverage
  */
 export interface CoverageScopeConfig {
-  /** Glob patterns for files that should be included in coverage */
-  include: string[]
-  /** Glob patterns for files that should be excluded from coverage */
-  exclude: string[]
+  /**
+   * Patterns for files that should be included in coverage.
+   * Can be glob patterns (e.g., "src/**\/*.ts") or regex patterns prefixed with "regex:"
+   * (e.g., "regex:^src/app/.*\\.(ts|tsx)$")
+   */
+  include: CoveragePattern[]
+  /**
+   * Patterns for files that should be excluded from coverage.
+   * Can be glob patterns or regex patterns prefixed with "regex:"
+   */
+  exclude: CoveragePattern[]
+}
+
+/**
+ * Preset configurations for common project types
+ */
+export type CoveragePreset = 'default' | 'vapi-nextjs'
+
+/**
+ * Vapi Next.js preset coverage scope patterns (matching atlas implementation)
+ */
+export const VAPI_NEXTJS_COVERAGE_SCOPE: CoverageScopeConfig = {
+  include: [
+    'regex:^src/app/.*\\.(ts|tsx)$',
+    'regex:^src/components/.*\\.(ts|tsx)$',
+    'regex:^src/hooks/.*\\.(ts|tsx)$',
+    'regex:^src/lib/.*\\.ts$',
+  ],
+  exclude: [
+    'regex:^src/test/',
+    'regex:\\.test\\.(ts|tsx)$',
+    'regex:\\.spec\\.(ts|tsx)$',
+    'regex:/types/',
+    'regex:\\.d\\.ts$',
+    'regex:/layout\\.tsx$',
+    'regex:/page\\.tsx$',
+    'regex:^src/components/ui/[^/]+\\.tsx$',
+    'regex:^src/lib/api/generate-mcp-tools\\.ts$',
+    'regex:/index\\.ts$',
+    'regex:^src/app/api/auth/\\[\\.\\.\\.nextauth\\]/route\\.ts$',
+  ],
+}
+
+/**
+ * Detailed rules guidance for the Claude agent
+ * These provide specific conventions for different file types
+ */
+export interface RulesGuidance {
+  /** Rules for API routes */
+  apiRoutes?: string[]
+  /** Rules for React components */
+  reactComponents?: string[]
+  /** Rules for hooks */
+  hooks?: string[]
+  /** Rules for test files */
+  testFiles?: string[]
+  /** Rules for all files */
+  allFiles?: string[]
 }
 
 /**
@@ -73,6 +133,9 @@ export interface BulletproofConfig {
   /** Coverage scope patterns */
   coverageScope: CoverageScopeConfig
 
+  /** Use a preset for coverage scope (overrides coverageScope if set) */
+  coveragePreset?: CoveragePreset
+
   /** Default checks to run */
   checks: ChecksConfig
 
@@ -87,6 +150,46 @@ export interface BulletproofConfig {
 
   /** Additional prompt instructions */
   additionalInstructions?: string
+
+  /** Detailed rules guidance for different file types */
+  rulesGuidance?: RulesGuidance
+}
+
+/**
+ * Default Vapi-specific rules guidance (matching atlas implementation)
+ */
+export const DEFAULT_VAPI_RULES_GUIDANCE: RulesGuidance = {
+  apiRoutes: [
+    'Uses `authenticateRequestWithPermissions` for auth',
+    'Emits SSE events for all create/update/delete operations (`emitEvent`)',
+    'Returns proper HTTP status codes (200, 201, 400, 401, 403, 404, 500)',
+    'Has corresponding tests in src/test/api/',
+  ],
+  reactComponents: [
+    'Uses existing UI components from src/components/ui/ (Button, Card, Badge, etc.)',
+    'Uses `cn()` for className merging',
+    'Uses `@/` path aliases (never relative imports like ../../)',
+    'Loading states use skeleton components',
+    'Detail/nested pages use `DetailPageHeader` with back button',
+    'Mutations use `useOptimisticMutation` hook',
+    'Links prefetch on hover',
+  ],
+  hooks: [
+    'Custom hooks follow use* naming convention',
+    'Uses proper TypeScript types (no `any`)',
+  ],
+  testFiles: [
+    'Located in src/test/ mirroring source path',
+    'Tests auth (401), validation (400), happy path, and error cases',
+    'Uses vi.mock() before imports',
+    'Has beforeEach with vi.resetAllMocks()',
+  ],
+  allFiles: [
+    'No hardcoded values (use constants)',
+    'Console logs use context prefixes like [API], [SSE], [Auth]',
+    'TypeScript types are explicit (no `any`)',
+    'Import order follows: React > Next > External > Internal hooks > Components > Utils > Types',
+  ],
 }
 
 /**
@@ -130,6 +233,7 @@ export const DEFAULT_CONFIG: BulletproofConfig = {
     testCoverageRelated: 'npm run test:coverage:related',
   },
   rulesFile: '.cursorrules',
+  rulesGuidance: DEFAULT_VAPI_RULES_GUIDANCE,
 }
 
 /**
@@ -175,6 +279,25 @@ export function loadConfigFile(cwd: string): Partial<BulletproofConfig> | null {
 }
 
 /**
+ * Get coverage scope based on preset or explicit config
+ */
+function getCoverageScope(
+  partial: Partial<BulletproofConfig> | null,
+  defaults: BulletproofConfig
+): CoverageScopeConfig {
+  // If preset is specified, use it
+  if (partial?.coveragePreset === 'vapi-nextjs') {
+    return VAPI_NEXTJS_COVERAGE_SCOPE
+  }
+
+  // Otherwise use explicit config or defaults
+  return {
+    include: partial?.coverageScope?.include ?? defaults.coverageScope.include,
+    exclude: partial?.coverageScope?.exclude ?? defaults.coverageScope.exclude,
+  }
+}
+
+/**
  * Merge partial config with defaults
  */
 export function mergeConfig(
@@ -192,10 +315,8 @@ export function mergeConfig(
       ...defaults.coverageThresholds,
       ...partial.coverageThresholds,
     },
-    coverageScope: {
-      include: partial.coverageScope?.include ?? defaults.coverageScope.include,
-      exclude: partial.coverageScope?.exclude ?? defaults.coverageScope.exclude,
-    },
+    coverageScope: getCoverageScope(partial, defaults),
+    coveragePreset: partial.coveragePreset,
     checks: {
       ...defaults.checks,
       ...partial.checks,
@@ -207,6 +328,7 @@ export function mergeConfig(
     rulesFile: partial.rulesFile ?? defaults.rulesFile,
     systemPrompt: partial.systemPrompt,
     additionalInstructions: partial.additionalInstructions,
+    rulesGuidance: partial.rulesGuidance ?? defaults.rulesGuidance,
   }
 }
 
@@ -219,25 +341,33 @@ export function loadConfig(cwd: string = process.cwd()): BulletproofConfig {
 }
 
 /**
+ * Convert a coverage pattern (glob or regex) to a RegExp
+ */
+function patternToRegex(pattern: CoveragePattern): RegExp {
+  // Check if it's a regex pattern (prefixed with "regex:")
+  if (pattern.startsWith('regex:')) {
+    return new RegExp(pattern.slice(6))
+  }
+
+  // Otherwise, convert glob to regex
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*/g, '<<<GLOBSTAR>>>')
+    .replace(/\*/g, '[^/]*')
+    .replace(/<<<GLOBSTAR>>>/g, '.*')
+  return new RegExp(`^${escaped}$`)
+}
+
+/**
  * Check if a file matches coverage scope patterns
  */
 export function isInCoverageScope(
   file: string,
   scope: CoverageScopeConfig
 ): boolean {
-  // Convert glob patterns to regex for matching
-  const toRegex = (pattern: string): RegExp => {
-    const escaped = pattern
-      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-      .replace(/\*\*/g, '<<<GLOBSTAR>>>')
-      .replace(/\*/g, '[^/]*')
-      .replace(/<<<GLOBSTAR>>>/g, '.*')
-    return new RegExp(`^${escaped}$`)
-  }
-
   // Check if file matches any include pattern
   const matchesInclude = scope.include.some((pattern) =>
-    toRegex(pattern).test(file)
+    patternToRegex(pattern).test(file)
   )
 
   if (!matchesInclude) {
@@ -246,7 +376,7 @@ export function isInCoverageScope(
 
   // Check if file matches any exclude pattern
   const matchesExclude = scope.exclude.some((pattern) =>
-    toRegex(pattern).test(file)
+    patternToRegex(pattern).test(file)
   )
 
   return !matchesExclude

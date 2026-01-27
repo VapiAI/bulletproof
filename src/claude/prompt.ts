@@ -3,7 +3,7 @@
  */
 
 import type { DiffAnalysis } from '../diff/analyzer.js'
-import type { BulletproofConfig } from '../config.js'
+import type { BulletproofConfig, RulesGuidance } from '../config.js'
 
 /**
  * Generate the system prompt for Claude
@@ -25,6 +25,66 @@ Do NOT read files from other users' directories.`
   }
 
   return base
+}
+
+/**
+ * Generate the rules guidance section based on config
+ */
+function generateRulesGuidanceSection(
+  guidance: RulesGuidance | undefined,
+  rulesFile: string
+): string {
+  if (!guidance) {
+    return `Run \`git diff HEAD~1 --name-only\` to see changed files, then review them against ${rulesFile}.`
+  }
+
+  const sections: string[] = []
+
+  sections.push(
+    `Run \`git diff HEAD~1 --name-only\` to see changed files, then review them against ${rulesFile}:`
+  )
+
+  if (guidance.apiRoutes && guidance.apiRoutes.length > 0) {
+    sections.push('')
+    sections.push('**For API routes, verify:**')
+    guidance.apiRoutes.forEach((rule) => {
+      sections.push(`- ${rule}`)
+    })
+  }
+
+  if (guidance.reactComponents && guidance.reactComponents.length > 0) {
+    sections.push('')
+    sections.push('**For React components, verify:**')
+    guidance.reactComponents.forEach((rule) => {
+      sections.push(`- ${rule}`)
+    })
+  }
+
+  if (guidance.hooks && guidance.hooks.length > 0) {
+    sections.push('')
+    sections.push('**For hooks, verify:**')
+    guidance.hooks.forEach((rule) => {
+      sections.push(`- ${rule}`)
+    })
+  }
+
+  if (guidance.testFiles && guidance.testFiles.length > 0) {
+    sections.push('')
+    sections.push('**For test files, verify:**')
+    guidance.testFiles.forEach((rule) => {
+      sections.push(`- ${rule}`)
+    })
+  }
+
+  if (guidance.allFiles && guidance.allFiles.length > 0) {
+    sections.push('')
+    sections.push('**For ALL files, verify:**')
+    guidance.allFiles.forEach((rule) => {
+      sections.push(`- ${rule}`)
+    })
+  }
+
+  return sections.join('\n')
 }
 
 /**
@@ -151,17 +211,7 @@ ${checksToRun.join('\n')}
 ${coverageInstructions}
 
 ## RULES COMPLIANCE CHECK (Step 1):
-Run \`git diff HEAD~1 --name-only\` to see changed files, then review them against ${config.rulesFile}:
-
-**For API routes, verify:**
-- Uses proper authentication
-- Returns proper HTTP status codes (200, 201, 400, 401, 403, 404, 500)
-- Has corresponding tests
-
-**For ALL files, verify:**
-- No hardcoded values (use constants)
-- TypeScript types are explicit (no \`any\`)
-- Follows existing code patterns
+${generateRulesGuidanceSection(config.rulesGuidance, config.rulesFile)}
 
 Report after compliance check:
 ✓ RULES COMPLIANCE PASSED  or  ✗ RULES COMPLIANCE: [list violations]

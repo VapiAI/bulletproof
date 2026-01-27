@@ -4,7 +4,11 @@
  * Main orchestrator class that coordinates all checks and Claude agent.
  */
 
+import * as dotenv from 'dotenv'
 import { execSync } from 'child_process'
+
+// Load environment variables from .env.local (matching atlas behavior)
+dotenv.config({ path: '.env.local' })
 import type { BulletproofConfig } from './config.js'
 import { loadConfig } from './config.js'
 import { analyzeDiff, type DiffAnalysis } from './diff/analyzer.js'
