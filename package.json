@@ -38,7 +38,8 @@
     "lint": "eslint src --ext .ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.76",
