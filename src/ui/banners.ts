@@ -2,8 +2,7 @@
  * BULLETPROOF - ASCII art banners and terminal UI
  */
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const figlet = require('figlet')
+import figlet from 'figlet'
 import chalkAnimation from 'chalk-animation'
 import { colors, gradients } from './colors.js'
 
