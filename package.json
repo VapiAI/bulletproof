@@ -1,7 +1,7 @@
 {
   "name": "@vapi/bulletproof",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "description": "Pre-push guardian that uses Claude to run checks and auto-fix issues",
   "keywords": [
     "pre-push",
