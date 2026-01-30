@@ -11,6 +11,8 @@
 
 **Pre-push guardian that uses Claude to run checks and auto-fix issues.**
 
+> 📚 **New to BULLETPROOF?** Check out the **[Setup Guide](./SETUP.md)** for step-by-step installation instructions.
+
 BULLETPROOF is an AI-powered pre-push guardian that uses Claude (via the Claude Agent SDK) to:
 
 - Run TypeScript type checking
