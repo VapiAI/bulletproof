@@ -64,7 +64,7 @@ If you prefer manual installation:
 
 ```bash
 # Using npm
-npm install @vapi/bulletproof
+npm install --save-dev git+https://github.com/VapiAI/bulletproof.git
 
 # Using yarn
 yarn add @vapi/bulletproof

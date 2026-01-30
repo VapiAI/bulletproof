@@ -28,24 +28,15 @@ Before you begin, ensure you have:
 
 ## Step 1: Install BULLETPROOF
 
-### Option A: Install from npm (Recommended)
-
-```bash
-# Using npm
-npm install --save-dev @vapi/bulletproof
-
-# Using yarn
-yarn add -D @vapi/bulletproof
-
-# Using pnpm
-pnpm add -D @vapi/bulletproof
-```
-
-### Option B: Install from GitHub
+### Install from GitHub
 
 ```bash
 npm install --save-dev git+https://github.com/VapiAI/bulletproof.git
+
+pnpm add -D git+https://github.com/VapiAI/bulletproof.git
 ```
+
+> **Note:** yarn support is coming soon.
 
 ---
 
