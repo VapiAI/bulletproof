@@ -1,0 +1,39 @@
+{
+  "model": "claude-opus-4-5-20251101",
+  "maxTurns": 50,
+  "coverageThresholds": {
+    "lines": 90,
+    "statements": 90,
+    "functions": 78,
+    "branches": 80
+  },
+  "coverageScope": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ],
+    "exclude": [
+      "src/test/**",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/*.spec.ts",
+      "**/*.spec.tsx",
+      "**/types/**",
+      "**/*.d.ts"
+    ]
+  },
+  "checks": {
+    "rules": true,
+    "typecheck": true,
+    "tests": true,
+    "coverage": true
+  },
+  "commands": {
+    "typecheck": "npm run typecheck",
+    "test": "npm run test",
+    "testCoverage": "npm run test -- --coverage",
+    "testRelated": "npm run test -- --changed",
+    "testCoverageRelated": "npm run test -- --coverage --changed"
+  },
+  "rulesFile": ".cursorrules"
+}
