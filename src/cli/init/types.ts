@@ -81,7 +81,10 @@ export interface ConfigDefaults {
     exclude: string[]
   }
   commands: {
+    lint: string | null
+    format: string | null
     typecheck: string
+    build: string | null
     test: string
     testCoverage: string
     testRelated: string

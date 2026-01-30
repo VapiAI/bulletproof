@@ -10,6 +10,11 @@ import { loadConfig } from './config.js'
 import { analyzeDiff, type DiffAnalysis } from './diff/analyzer.js'
 import { runClaudeAgent } from './claude/runner.js'
 import {
+  runDiscovery,
+  formatDiscoverySummary,
+  type DiscoveryResult,
+} from './discovery/index.js'
+import {
   pullAndMergeMain,
   commitFixes,
   pushToRemote,
@@ -80,6 +85,7 @@ interface GuardianState {
   sectionsState: SectionsState | null
   startTime: number
   isCleaningUp: boolean
+  discovery: DiscoveryResult | null
 }
 
 /**
@@ -111,6 +117,7 @@ export class GuardianRunner {
       sectionsState: null,
       startTime: Date.now(),
       isCleaningUp: false,
+      discovery: null,
     }
 
     // Setup cleanup handlers
@@ -164,6 +171,26 @@ export class GuardianRunner {
       printMiniLogo(agentMode)
     }
 
+    // Run discovery if enabled
+    if (config.discovery.autoDiscoverScripts) {
+      this.state.discovery = runDiscovery(cwd, {
+        conventions: config.discovery.conventions,
+        discoverScripts: true,
+      })
+
+      if (verbose) {
+        if (agentMode) {
+          console.log('[DISCOVERY]')
+          console.log(formatDiscoverySummary(this.state.discovery))
+        } else {
+          console.log(`  ${colors.dim}Discovery:${colors.reset}`)
+          console.log(
+            `  ${colors.dim}${formatDiscoverySummary(this.state.discovery).split('\n').join('\n  ')}${colors.reset}`
+          )
+        }
+      }
+    }
+
     // Analyze diff
     const analysis = analyzeDiff(config, cwd)
     this.state.sectionsState = createSectionsState(analysis.checks)
@@ -196,6 +223,7 @@ export class GuardianRunner {
       agentMode,
       verbose,
       cwd,
+      discovery: this.state.discovery ?? undefined,
     })
 
     let success = claudeResult.success

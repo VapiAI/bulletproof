@@ -5,6 +5,7 @@
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import type { BulletproofConfig } from '../config.js'
 import type { DiffAnalysis } from '../diff/analyzer.js'
+import type { DiscoveryResult } from '../discovery/index.js'
 import { generatePrompt, generateSystemPrompt } from './prompt.js'
 import type { SectionsState } from '../ui/sections.js'
 import { updateSectionStatus, startSection } from '../ui/sections.js'
@@ -24,6 +25,8 @@ export interface ClaudeRunnerOptions {
   agentMode: boolean
   verbose: boolean
   cwd: string
+  /** Discovery results for conventions and scripts */
+  discovery?: DiscoveryResult
 }
 
 /**
@@ -49,10 +52,11 @@ export async function runClaudeAgent(
     agentMode,
     verbose,
     cwd,
+    discovery,
   } = options
 
-  const prompt = generatePrompt(config, analysis, hasConflicts)
-  const systemPrompt = generateSystemPrompt(config)
+  const prompt = generatePrompt(config, analysis, hasConflicts, discovery)
+  const systemPrompt = generateSystemPrompt(config, discovery)
 
   const thresholds = config.coverageThresholds
 
@@ -91,7 +95,9 @@ export async function runClaudeAgent(
                   // Detect section starts from text
                   if (
                     line.includes('.cursorrules') ||
+                    line.includes('CLAUDE.md') ||
                     line.includes('RULES COMPLIANCE') ||
+                    line.includes('conventions') ||
                     line.includes('git diff HEAD')
                   ) {
                     startSection(
@@ -101,12 +107,54 @@ export async function runClaudeAgent(
                       agentMode
                     )
                   } else if (
+                    line.includes('npm run lint') ||
+                    line.includes('yarn lint') ||
+                    line.includes('pnpm run lint') ||
+                    line.includes('bun run lint') ||
+                    line.includes('eslint')
+                  ) {
+                    startSection(
+                      sectionsState,
+                      'lint',
+                      () => stopSpinner(spinnerState, agentMode),
+                      agentMode
+                    )
+                  } else if (
+                    line.includes('npm run format') ||
+                    line.includes('yarn format') ||
+                    line.includes('pnpm run format') ||
+                    line.includes('bun run format') ||
+                    line.includes('prettier')
+                  ) {
+                    startSection(
+                      sectionsState,
+                      'format',
+                      () => stopSpinner(spinnerState, agentMode),
+                      agentMode
+                    )
+                  } else if (
                     line.includes('npm run typecheck') ||
-                    line.includes('tsc')
+                    line.includes('yarn typecheck') ||
+                    line.includes('pnpm run typecheck') ||
+                    line.includes('bun run typecheck') ||
+                    (line.includes('tsc') && !line.includes('test'))
                   ) {
                     startSection(
                       sectionsState,
                       'typecheck',
+                      () => stopSpinner(spinnerState, agentMode),
+                      agentMode
+                    )
+                  } else if (
+                    (line.includes('npm run build') ||
+                     line.includes('yarn build') ||
+                     line.includes('pnpm run build') ||
+                     line.includes('bun run build')) &&
+                    !line.includes('test')
+                  ) {
+                    startSection(
+                      sectionsState,
+                      'build',
                       () => stopSpinner(spinnerState, agentMode),
                       agentMode
                     )
@@ -208,6 +256,86 @@ function handleStatusLine(
   thresholds: { lines: number; statements: number; functions: number; branches: number },
   agentMode: boolean
 ): void {
+  // Handle lint status
+  if (line.includes('LINT PASSED')) {
+    stopSpinner(spinnerState, agentMode)
+    updateSectionStatus(sectionsState, 'lint', 'passed')
+    if (agentMode) {
+      console.log('[PASSED] Lint')
+    } else {
+      console.log(
+        `  ${gradients.success('✓')}  ${colors.dim}Passed${colors.reset}`
+      )
+    }
+    startSpinner(spinnerState, 'Moving to format...', agentMode)
+  } else if (line.includes('LINT FAILED')) {
+    stopSpinner(spinnerState, agentMode)
+    const match = line.match(/(\d+)\s*error/)
+    const errCount = match ? match[1] : '?'
+    updateSectionStatus(sectionsState, 'lint', 'failed')
+    if (agentMode) {
+      console.log(`[FAILED] Lint (${errCount} errors)`)
+    } else {
+      console.log(
+        `  ${gradients.fail('✗')}  ${colors.dim}Failed${colors.reset} ${gradients.fail(`(${errCount} errors)`)}`
+      )
+    }
+    startSpinner(spinnerState, 'Fixing lint errors...', agentMode)
+  }
+
+  // Handle format status
+  if (line.includes('FORMAT PASSED')) {
+    stopSpinner(spinnerState, agentMode)
+    updateSectionStatus(sectionsState, 'format', 'passed')
+    if (agentMode) {
+      console.log('[PASSED] Format')
+    } else {
+      console.log(
+        `  ${gradients.success('✓')}  ${colors.dim}Passed${colors.reset}`
+      )
+    }
+    startSpinner(spinnerState, 'Moving to typecheck...', agentMode)
+  } else if (line.includes('FORMAT FAILED')) {
+    stopSpinner(spinnerState, agentMode)
+    const match = line.match(/(\d+)\s*file/)
+    const fileCount = match ? match[1] : '?'
+    updateSectionStatus(sectionsState, 'format', 'failed')
+    if (agentMode) {
+      console.log(`[FAILED] Format (${fileCount} files)`)
+    } else {
+      console.log(
+        `  ${gradients.fail('✗')}  ${colors.dim}Failed${colors.reset} ${gradients.fail(`(${fileCount} files)`)}`
+      )
+    }
+    startSpinner(spinnerState, 'Fixing format errors...', agentMode)
+  }
+
+  // Handle build status
+  if (line.includes('BUILD PASSED')) {
+    stopSpinner(spinnerState, agentMode)
+    updateSectionStatus(sectionsState, 'build', 'passed')
+    if (agentMode) {
+      console.log('[PASSED] Build')
+    } else {
+      console.log(
+        `  ${gradients.success('✓')}  ${colors.dim}Passed${colors.reset}`
+      )
+    }
+    startSpinner(spinnerState, 'Moving to tests...', agentMode)
+  } else if (line.includes('BUILD FAILED')) {
+    stopSpinner(spinnerState, agentMode)
+    updateSectionStatus(sectionsState, 'build', 'failed')
+    if (agentMode) {
+      console.log('[FAILED] Build')
+    } else {
+      console.log(
+        `  ${gradients.fail('✗')}  ${colors.dim}Failed${colors.reset}`
+      )
+    }
+    startSpinner(spinnerState, 'Fixing build errors...', agentMode)
+  }
+
+  // Handle typecheck status
   if (line.includes('TYPECHECK PASSED')) {
     stopSpinner(spinnerState, agentMode)
     updateSectionStatus(sectionsState, 'typecheck', 'passed')
@@ -373,7 +501,11 @@ function handleToolUse(
     toolName === 'bash' ||
     toolName === 'execute_bash'
   ) {
-    if (cmd.includes('cat .cursorrules') || cmd.includes('git diff HEAD')) {
+    if (
+      cmd.includes('cat .cursorrules') ||
+      cmd.includes('cat CLAUDE.md') ||
+      cmd.includes('git diff HEAD')
+    ) {
       startSection(
         sectionsState,
         'rules',
@@ -381,12 +513,43 @@ function handleToolUse(
         agentMode
       )
     } else if (
+      cmd.includes('run lint') ||
+      (cmd.includes('eslint') && !cmd.includes('fix'))
+    ) {
+      startSection(
+        sectionsState,
+        'lint',
+        () => stopSpinner(spinnerState, agentMode),
+        agentMode
+      )
+    } else if (
+      cmd.includes('run format') ||
+      (cmd.includes('prettier') && !cmd.includes('write'))
+    ) {
+      startSection(
+        sectionsState,
+        'format',
+        () => stopSpinner(spinnerState, agentMode),
+        agentMode
+      )
+    } else if (
       cmd.includes('typecheck') ||
-      (cmd.includes('tsc') && !cmd.includes('test'))
+      cmd.includes('type-check') ||
+      (cmd.includes('tsc') && !cmd.includes('test') && !cmd.includes('build'))
     ) {
       startSection(
         sectionsState,
         'typecheck',
+        () => stopSpinner(spinnerState, agentMode),
+        agentMode
+      )
+    } else if (
+      cmd.includes('run build') &&
+      !cmd.includes('test')
+    ) {
+      startSection(
+        sectionsState,
+        'build',
         () => stopSpinner(spinnerState, agentMode),
         agentMode
       )
