@@ -12,6 +12,8 @@
 **Pre-push guardian that uses Claude to run checks and auto-fix issues.**
 
 > 📚 **New to BULLETPROOF?** Check out the **[Setup Guide](./SETUP.md)** for step-by-step installation instructions.
+>
+> 📦 **Maintainers:** See the **[Publishing Guide](./PUBLISHING.md)** for npm release instructions.
 
 BULLETPROOF is an AI-powered pre-push guardian that uses Claude (via the Claude Agent SDK) to:
 
