@@ -7,6 +7,7 @@
 
 import { Command } from 'commander'
 import { runGuardian } from '../guardian.js'
+import { runInitWizard } from './init/index.js'
 
 const program = new Command()
 
@@ -42,64 +43,25 @@ program
 
 program
   .command('init')
-  .description('Initialize BULLETPROOF configuration in the current project')
+  .description('Initialize BULLETPROOF with automatic setup wizard')
   .option('--cwd <path>', 'Working directory (default: current directory)')
+  .option('-y, --yes', 'Non-interactive mode - accept all defaults')
+  .option('--skip-api-key', 'Skip API key prompt')
+  .option('--verbose', 'Show detailed output')
   .action(async (options) => {
-    const { existsSync, writeFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const cwd = options.cwd ?? process.cwd()
+    try {
+      const result = await runInitWizard({
+        cwd: options.cwd,
+        yes: options.yes,
+        skipApiKey: options.skipApiKey,
+        verbose: options.verbose,
+      })
 
-    const configPath = resolve(cwd, 'bulletproof.config.json')
-
-    if (existsSync(configPath)) {
-      console.log('bulletproof.config.json already exists')
+      process.exit(result.success ? 0 : 1)
+    } catch (error) {
+      console.error('Fatal error:', error)
       process.exit(1)
     }
-
-    const defaultConfig = {
-      model: 'claude-opus-4-5-20251101',
-      maxTurns: 50,
-      coverageThresholds: {
-        lines: 90,
-        statements: 90,
-        functions: 78,
-        branches: 80,
-      },
-      coverageScope: {
-        include: ['src/**/*.ts', 'src/**/*.tsx'],
-        exclude: [
-          'src/test/**',
-          '**/*.test.ts',
-          '**/*.test.tsx',
-          '**/*.spec.ts',
-          '**/*.spec.tsx',
-          '**/types/**',
-          '**/*.d.ts',
-        ],
-      },
-      checks: {
-        rules: true,
-        typecheck: true,
-        tests: true,
-        coverage: true,
-      },
-      commands: {
-        typecheck: 'npm run typecheck',
-        test: 'npm run test',
-        testCoverage: 'npm run test:coverage:ci',
-        testRelated: 'npm run test:related',
-        testCoverageRelated: 'npm run test:coverage:related',
-      },
-      rulesFile: '.cursorrules',
-    }
-
-    writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2) + '\n')
-    console.log('Created bulletproof.config.json')
-    console.log('')
-    console.log('Next steps:')
-    console.log('1. Edit bulletproof.config.json to match your project')
-    console.log('2. Run `npx bulletproof` to test')
-    console.log('3. Add to your pre-push hook or CI pipeline')
   })
 
 program.parse()

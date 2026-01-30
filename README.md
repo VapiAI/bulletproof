@@ -33,7 +33,34 @@ BULLETPROOF is an AI-powered pre-push guardian that uses Claude (via the Claude 
 - **Agent Mode**: Clean output for CI/CD and non-interactive environments
 - **Configurable**: Customize thresholds, commands, and behavior
 
+## Quick Start
+
+**One command to set everything up:**
+
+```bash
+npx @vapi/bulletproof init
+```
+
+This interactive setup wizard will:
+- Detect your project type (Next.js, NestJS, React, Express, etc.)
+- Detect your package manager (npm, yarn, pnpm, bun)
+- Install and configure Husky with a pre-push hook
+- Generate a smart `bulletproof.config.json` based on your project
+- Help you set up your Anthropic API key
+
+That's it! BULLETPROOF is now configured and will run automatically on every push.
+
+### Non-Interactive Mode
+
+For CI environments or scripted setups:
+
+```bash
+npx @vapi/bulletproof init -y
+```
+
 ## Installation
+
+If you prefer manual installation:
 
 ```bash
 # Using npm
@@ -46,9 +73,7 @@ yarn add @vapi/bulletproof
 pnpm add @vapi/bulletproof
 ```
 
-## Quick Start
-
-### CLI Usage
+## CLI Usage
 
 ```bash
 # Run checks and push (default behavior)
@@ -66,14 +91,6 @@ npx bulletproof --agent
 # Show verbose output
 npx bulletproof --verbose
 ```
-
-### Initialize Configuration
-
-```bash
-npx bulletproof init
-```
-
-This creates a `bulletproof.config.json` file with default settings.
 
 ### Programmatic Usage
 
@@ -170,7 +187,9 @@ BULLETPROOF looks for configuration in the following locations (in order):
 
 ## Git Hook Integration
 
-### Using Husky
+The `npx bulletproof init` command automatically sets up Husky with a pre-push hook. If you need to set it up manually:
+
+### Using Husky (Recommended)
 
 ```bash
 # Install husky
