@@ -9,5 +9,7 @@ export default defineConfig({
   target: 'node18',
   splitting: false,
   treeshake: true,
+  bundle: true,
+  platform: 'node',
   external: ['@anthropic-ai/claude-agent-sdk'],
 })
