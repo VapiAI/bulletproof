@@ -21,11 +21,14 @@ export interface Section {
 export type SectionStatus = 'pending' | 'running' | 'passed' | 'failed'
 
 /**
- * All possible sections
+ * All possible sections in execution order
  */
 export const ALL_SECTIONS: readonly Section[] = [
   { id: 'rules', name: 'Conventions', icon: '📋' },
+  { id: 'lint', name: 'Lint', icon: '🔍' },
+  { id: 'format', name: 'Format', icon: '✨' },
   { id: 'typecheck', name: 'Typecheck', icon: '⚡' },
+  { id: 'build', name: 'Build', icon: '🔨' },
   { id: 'tests', name: 'Tests', icon: '🧪' },
   { id: 'coverage', name: 'Coverage', icon: '📊' },
 ] as const
@@ -48,7 +51,10 @@ export interface SectionsState {
 export function createSectionsState(checks: ChecksConfig): SectionsState {
   const sections = ALL_SECTIONS.filter((s) => {
     if (s.id === 'rules') return checks.rules
+    if (s.id === 'lint') return checks.lint
+    if (s.id === 'format') return checks.format
     if (s.id === 'typecheck') return checks.typecheck
+    if (s.id === 'build') return checks.build
     if (s.id === 'tests') return checks.tests
     if (s.id === 'coverage') return checks.coverage
     return true

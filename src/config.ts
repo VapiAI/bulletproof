@@ -23,8 +23,14 @@ export interface CoverageThresholds {
 export interface ChecksConfig {
   /** Run rules compliance check against project conventions */
   rules: boolean
+  /** Run linting (discovered from package.json) */
+  lint: boolean
+  /** Run formatting check (discovered from package.json) */
+  format: boolean
   /** Run TypeScript type checking */
   typecheck: boolean
+  /** Run build (discovered from package.json) */
+  build: boolean
   /** Run test suite */
   tests: boolean
   /** Run coverage analysis */
@@ -35,8 +41,14 @@ export interface ChecksConfig {
  * Commands configuration - npm scripts to run for each check
  */
 export interface CommandsConfig {
+  /** Command to run lint (auto-discovered or manual) */
+  lint: string | null
+  /** Command to run format check (auto-discovered or manual) */
+  format: string | null
   /** Command to run typecheck (default: npm run typecheck) */
   typecheck: string
+  /** Command to run build (auto-discovered or manual) */
+  build: string | null
   /** Command to run tests (default: npm run test) */
   test: string
   /** Command to run tests with coverage (default: npm run test:coverage:ci) */
@@ -45,6 +57,28 @@ export interface CommandsConfig {
   testRelated: string
   /** Command to run related tests with coverage (default: npm run test:coverage:related) */
   testCoverageRelated: string
+}
+
+/**
+ * Convention discovery configuration
+ */
+export interface ConventionsConfig {
+  /** Maximum size per convention file in bytes (default: 100KB) */
+  maxFileSize: number
+  /** Maximum combined size of all convention files in bytes (default: 200KB) */
+  maxCombinedSize: number
+  /** Whether to include source markers when combining files (default: true) */
+  includeSourceMarkers: boolean
+}
+
+/**
+ * Discovery configuration
+ */
+export interface DiscoveryConfig {
+  /** Convention file discovery settings */
+  conventions: ConventionsConfig
+  /** Whether to auto-discover scripts from package.json (default: true) */
+  autoDiscoverScripts: boolean
 }
 
 /**
@@ -79,8 +113,14 @@ export interface BulletproofConfig {
   /** Commands to run for each check */
   commands: CommandsConfig
 
-  /** Path to rules file (default: .cursorrules) */
+  /**
+   * Path to rules file (default: .cursorrules)
+   * @deprecated Use discovery.conventions instead - convention files are now auto-discovered
+   */
   rulesFile: string
+
+  /** Discovery configuration */
+  discovery: DiscoveryConfig
 
   /** System prompt customization */
   systemPrompt?: string
@@ -118,18 +158,32 @@ export const DEFAULT_CONFIG: BulletproofConfig = {
   },
   checks: {
     rules: true,
+    lint: true,
+    format: true,
     typecheck: true,
+    build: true,
     tests: true,
     coverage: true,
   },
   commands: {
+    lint: null, // Auto-discovered from package.json
+    format: null, // Auto-discovered from package.json
     typecheck: 'npm run typecheck',
+    build: null, // Auto-discovered from package.json
     test: 'npm run test',
     testCoverage: 'npm run test:coverage:ci',
     testRelated: 'npm run test:related',
     testCoverageRelated: 'npm run test:coverage:related',
   },
-  rulesFile: '.cursorrules',
+  rulesFile: '.cursorrules', // Deprecated - use discovery.conventions
+  discovery: {
+    conventions: {
+      maxFileSize: 100 * 1024, // 100KB
+      maxCombinedSize: 200 * 1024, // 200KB
+      includeSourceMarkers: true,
+    },
+    autoDiscoverScripts: true,
+  },
 }
 
 /**
@@ -205,6 +259,15 @@ export function mergeConfig(
       ...partial.commands,
     },
     rulesFile: partial.rulesFile ?? defaults.rulesFile,
+    discovery: {
+      conventions: {
+        ...defaults.discovery.conventions,
+        ...partial.discovery?.conventions,
+      },
+      autoDiscoverScripts:
+        partial.discovery?.autoDiscoverScripts ??
+        defaults.discovery.autoDiscoverScripts,
+    },
     systemPrompt: partial.systemPrompt,
     additionalInstructions: partial.additionalInstructions,
   }

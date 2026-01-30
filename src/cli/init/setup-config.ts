@@ -28,7 +28,10 @@ export function getConfigDefaults(info: ProjectInfo): ConfigDefaults {
       ],
     },
     commands: {
+      lint: null,
+      format: null,
       typecheck: 'npm run typecheck',
+      build: null,
       test: 'npm run test',
       testCoverage: 'npm run test:coverage',
       testRelated: 'npm run test:related',
@@ -122,12 +125,23 @@ export function generateConfig(info: ProjectInfo): BulletproofConfig {
     coverageScope: defaults.coverageScope,
     checks: {
       rules: true,
+      lint: true,
+      format: true,
       typecheck: info.hasTypeScript,
+      build: true,
       tests: info.hasVitest || info.hasJest || info.hasMocha,
       coverage: info.hasVitest || info.hasJest,
     },
     commands: defaults.commands,
     rulesFile: defaults.rulesFile,
+    discovery: {
+      autoDiscoverScripts: true,
+      conventions: {
+        maxFileSize: 100 * 1024, // 100KB
+        maxCombinedSize: 200 * 1024, // 200KB
+        includeSourceMarkers: true,
+      },
+    },
   }
 }
 

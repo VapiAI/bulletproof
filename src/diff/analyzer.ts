@@ -179,32 +179,50 @@ export function analyzeDiff(
 
     // Determine which checks to run
 
-    // DOCS ONLY: Skip everything except rules
+    // Helper to create full checks config
+    const createChecks = (overrides: Partial<ChecksConfig>): ChecksConfig => ({
+      rules: config.checks.rules,
+      lint: config.checks.lint,
+      format: config.checks.format,
+      typecheck: config.checks.typecheck,
+      build: config.checks.build,
+      tests: config.checks.tests,
+      coverage: config.checks.coverage,
+      ...overrides,
+    })
+
+    // DOCS ONLY: Skip everything except rules (no lint/format/build/typecheck/tests/coverage)
     if (
       result.files.length === result.categories.docs.length &&
       result.files.length > 0
     ) {
-      result.checks = {
+      result.checks = createChecks({
         rules: true,
+        lint: false,
+        format: false,
         typecheck: false,
+        build: false,
         tests: false,
         coverage: false,
-      }
+      })
       result.reason = `Docs only (${result.files.length} file${result.files.length > 1 ? 's' : ''}) - rules check only`
       return result
     }
 
-    // CONFIG ONLY: Skip tests and coverage
+    // CONFIG ONLY: Skip tests and coverage, but run lint/format/typecheck/build
     if (
       result.files.length === result.categories.config.length &&
       result.files.length > 0
     ) {
-      result.checks = {
+      result.checks = createChecks({
         rules: true,
+        lint: config.checks.lint,
+        format: config.checks.format,
         typecheck: true,
+        build: config.checks.build,
         tests: false,
         coverage: false,
-      }
+      })
       result.reason = `Config only (${result.files.length} file${result.files.length > 1 ? 's' : ''}) - skip tests`
       return result
     }
@@ -214,24 +232,30 @@ export function analyzeDiff(
       result.files.length === result.categories.scripts.length &&
       result.files.length > 0
     ) {
-      result.checks = {
+      result.checks = createChecks({
         rules: true,
+        lint: config.checks.lint,
+        format: config.checks.format,
         typecheck: true,
+        build: config.checks.build,
         tests: true,
         coverage: false,
-      }
+      })
       result.reason = `Scripts only (${result.files.length} file${result.files.length > 1 ? 's' : ''}) - skip coverage`
       return result
     }
 
     // TEST FILES ONLY: Run those tests specifically
     if (result.files.length === testFiles && testFiles > 0) {
-      result.checks = {
+      result.checks = createChecks({
         rules: true,
+        lint: config.checks.lint,
+        format: config.checks.format,
         typecheck: true,
+        build: false, // Don't need build for test-only changes
         tests: true,
         coverage: false,
-      }
+      })
       result.useRelatedTests = true
       result.relatedFiles = result.categories.tests
       result.reason = `Tests only (${testFiles} file${testFiles > 1 ? 's' : ''}) - run changed tests only`
@@ -240,12 +264,15 @@ export function analyzeDiff(
 
     // NO COVERED FILES: Skip coverage entirely
     if (coveredFiles === 0) {
-      result.checks = {
+      result.checks = createChecks({
         rules: true,
+        lint: config.checks.lint,
+        format: config.checks.format,
         typecheck: true,
+        build: config.checks.build,
         tests: true,
         coverage: false,
-      }
+      })
       if (srcFiles > 0) {
         result.reason = `${srcFiles} file${srcFiles > 1 ? 's' : ''} changed (not in coverage scope) - skip coverage`
       } else {
