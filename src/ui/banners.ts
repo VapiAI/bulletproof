@@ -2,10 +2,19 @@
  * BULLETPROOF - ASCII art banners and terminal UI
  */
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const figlet = require('figlet')
 import chalkAnimation from 'chalk-animation'
 import { colors, gradients } from './colors.js'
+import type figlet from 'figlet'
+
+// Dynamic import for figlet (ESM compatibility)
+let figletInstance: typeof figlet | null = null
+async function getFiglet(): Promise<typeof figlet> {
+  if (!figletInstance) {
+    const mod = await import('figlet')
+    figletInstance = mod.default || mod
+  }
+  return figletInstance
+}
 
 /** Active chalk animation reference for cleanup */
 let activeAnimation: ReturnType<typeof chalkAnimation.neon> | null = null
@@ -44,7 +53,8 @@ export async function printAnimatedLogo(agentMode: boolean = false): Promise<voi
     return
   }
 
-  const logo = figlet.textSync('BULLETPROOF', {
+  const figletLib = await getFiglet()
+  const logo = figletLib.textSync('BULLETPROOF', {
     font: 'ANSI Shadow',
     horizontalLayout: 'fitted',
   })
