@@ -5,8 +5,11 @@ Setting up BULLETPROOF is simple - just run the interactive wizard and you're do
 ## Quick Setup (Recommended)
 
 ```bash
-# Install
-npm install -D @vapi/bulletproof
+# Install from GitHub (npm)
+npm install -D git+https://github.com/VapiAI/bulletproof.git
+
+# Or with pnpm
+pnpm add -D git+https://github.com/VapiAI/bulletproof.git
 
 # Run the wizard - handles everything automatically
 npx bulletproof init
@@ -46,15 +49,11 @@ This accepts all defaults without prompts. Set `ANTHROPIC_API_KEY` in your envir
 | **Config File** | Creates `bulletproof.config.json` with project-appropriate defaults |
 | **API Key** | Optionally adds `ANTHROPIC_API_KEY` to `.env.local` |
 
-### Install from GitHub
+### Alternative: Install with yarn
 
 ```bash
-npm install --save-dev git+https://github.com/VapiAI/bulletproof.git
-
-pnpm add -D git+https://github.com/VapiAI/bulletproof.git
+yarn add -D git+https://github.com/VapiAI/bulletproof.git
 ```
-
-> **Note:** yarn support is coming soon.
 
 ---
 
