@@ -35,10 +35,14 @@ BULLETPROOF is an AI-powered pre-push guardian that uses Claude (via the Claude 
 
 ## Quick Start
 
-**One command to set everything up:**
+**Install from GitHub and run the setup wizard:**
 
 ```bash
-npx @vapi/bulletproof init
+# Install from GitHub
+npm install -D git+https://github.com/VapiAI/bulletproof.git
+
+# Run the interactive setup wizard
+npx bulletproof init
 ```
 
 This interactive setup wizard will:
@@ -55,7 +59,7 @@ That's it! BULLETPROOF is now configured and will run automatically on every pus
 For CI environments or scripted setups:
 
 ```bash
-npx @vapi/bulletproof init -y
+npx bulletproof init -y
 ```
 
 ## Installation
@@ -64,13 +68,13 @@ If you prefer manual installation:
 
 ```bash
 # Using npm
-npm install --save-dev git+https://github.com/VapiAI/bulletproof.git
+npm install -D git+https://github.com/VapiAI/bulletproof.git
 
 # Using yarn
-yarn add @vapi/bulletproof
+yarn add -D git+https://github.com/VapiAI/bulletproof.git
 
 # Using pnpm
-pnpm add @vapi/bulletproof
+pnpm add -D git+https://github.com/VapiAI/bulletproof.git
 ```
 
 ## CLI Usage
