@@ -20,6 +20,22 @@ async function getFiglet(): Promise<typeof figlet> {
 let activeAnimation: ReturnType<typeof chalkAnimation.neon> | null = null
 
 /**
+ * Clear multi-line animation output from the terminal
+ */
+function clearAnimationFrame(frame: string): void {
+  const lineCount = frame.split('\n').length
+  if (lineCount <= 0) return
+
+  for (let i = 0; i < lineCount; i += 1) {
+    process.stdout.write('\x1b[2K')
+    if (i < lineCount - 1) {
+      process.stdout.write('\x1b[1A')
+    }
+  }
+  process.stdout.write('\r')
+}
+
+/**
  * Sleep utility for animations
  */
 function sleep(ms: number): Promise<void> {
@@ -168,6 +184,8 @@ export async function printSuccessBanner(
   activeAnimation.stop()
   activeAnimation = null
 
+  clearAnimationFrame(successArt)
+
   // Print static gradient version with bulletproof colors
   console.log(gradients.bulletproof(successArt))
 }
@@ -216,6 +234,8 @@ export async function printFailureBanner(
   await sleep(2000)
   activeAnimation.stop()
   activeAnimation = null
+
+  clearAnimationFrame(failArt)
 
   // Print static red version
   console.log(gradients.fail(failArt))
