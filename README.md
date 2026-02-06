@@ -138,7 +138,7 @@ BULLETPROOF looks for configuration in the following locations (in order):
 
 ```json
 {
-  "model": "claude-opus-4-5-20251101",
+  "model": "claude-opus-4-6",
   "maxTurns": 50,
   "coverageThresholds": {
     "lines": 90,
@@ -179,7 +179,7 @@ BULLETPROOF looks for configuration in the following locations (in order):
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `claude-opus-4-5-20251101` | Claude model to use |
+| `model` | string | `claude-opus-4-6` | Claude model to use |
 | `maxTurns` | number | `50` | Maximum Claude agent turns |
 | `coverageThresholds` | object | See below | Coverage percentage thresholds |
 | `coverageScope` | object | See below | Patterns for coverage scope |
