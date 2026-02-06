@@ -95,7 +95,7 @@ export interface CoverageScopeConfig {
  * Full BULLETPROOF configuration
  */
 export interface BulletproofConfig {
-  /** Claude model to use (default: claude-opus-4-5-20251101) */
+  /** Claude model to use (default: claude-opus-4-6) */
   model: string
 
   /** Maximum number of Claude turns for fixing issues (default: 50) */
@@ -133,7 +133,7 @@ export interface BulletproofConfig {
  * Default configuration values
  */
 export const DEFAULT_CONFIG: BulletproofConfig = {
-  model: 'claude-opus-4-5-20251101',
+  model: 'claude-opus-4-6',
   maxTurns: 50,
   coverageThresholds: {
     lines: 90,

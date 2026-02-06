@@ -114,7 +114,7 @@ export function generateConfig(info: ProjectInfo): BulletproofConfig {
   const defaults = getConfigDefaults(info)
 
   return {
-    model: 'claude-opus-4-5-20251101',
+    model: 'claude-opus-4-6',
     maxTurns: 50,
     coverageThresholds: {
       lines: 90,
