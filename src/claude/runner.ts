@@ -63,6 +63,7 @@ export async function runClaudeAgent(
   startSpinner(spinnerState, 'Analyzing codebase...', agentMode)
 
   let success = false
+  const stderrChunks: string[] = []
 
   try {
     for await (const message of query({
@@ -74,6 +75,9 @@ export async function runClaudeAgent(
         permissionMode: 'bypassPermissions',
         allowDangerouslySkipPermissions: true,
         cwd,
+        stderr: (data: string) => {
+          stderrChunks.push(data)
+        },
       },
     })) {
       switch (message.type) {
@@ -239,8 +243,13 @@ export async function runClaudeAgent(
     }
   } catch (e) {
     stopSpinner(spinnerState, agentMode)
-    console.error(`  ${colors.red}○${colors.reset}  Error:`, e)
-    return { success: false, error: String(e) }
+    const stderrOutput = stderrChunks.join('').trim()
+    if (stderrOutput) {
+      console.error(`  ${colors.red}○${colors.reset}  Error: ${stderrOutput}`)
+    } else {
+      console.error(`  ${colors.red}○${colors.reset}  Error:`, e)
+    }
+    return { success: false, error: stderrOutput || String(e) }
   }
 
   return { success }
